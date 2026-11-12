@@ -299,6 +299,12 @@ Constraints the compiler adds from the types, which the circuit relies on:
 - `leaf_index` and `scope_mask` are split into bits with `Field::to_le_bits`, which constrains
   every output to be boolean and the bits to recompose to the input. The Merkle direction bits are
   therefore boolean by construction.
+- The scope bit is selected by comparing `scope_index` with each of the 64 positions. There is no
+  array lookup and no memory operation anywhere in the circuit.
+
+C2a and C4a are stated for clarity and for a precise error. The circuit would reject the same
+inputs without them: an index of `2^20` or more has no 20-bit decomposition, and a scope index of
+64 or more matches no position, so it reads as not granted.
 
 ## 7. Design decisions
 
@@ -320,7 +326,8 @@ Constraints the compiler adds from the types, which the circuit relies on:
 | D14 | **Tags are ASCII labels read as integers.** | Self-describing, unique to this protocol, and trivial to reproduce in any language. |
 | D15 | **Expiry is strict: valid if and only if `current_timestamp < expiry`.** | `expiry` is the first instant at which the policy is no longer valid. |
 | D16 | **Public values are inputs checked by assertion, not return values.** | The prover's hashing code and the circuit must agree before a proof exists, so an encoding bug in TypeScript fails loudly at witness generation with a named assertion. |
-| D17 | **Four crates.** `policy_primitives` (library) and `proof_of_intent` (binary) are the security path. `testkit` (library) and `fixture_gen` (binary) are off-circuit tooling. | The security path contains no `unconstrained` function and no `unsafe` block, and that is checked by a script. Every assertion sits in one file. |
+| D17 | **The scope bit is selected by comparison, not by an array lookup.** | With a lookup the compiler drops the explicit 8-bit range constraint on `scope_index`, because the lookup implies it. Comparing against every position keeps every integer input explicitly range-constrained, makes the check a total function, and removes memory operations from the circuit. It costs 127 gates, which changes nothing about the proving cost (section 11.3). |
+| D18 | **Four crates.** `policy_primitives` (library) and `proof_of_intent` (binary) are the security path. `testkit` (library) and `fixture_gen` (binary) are off-circuit tooling. | The security path contains no `unconstrained` function and no `unsafe` block, and that is checked by a script. Every assertion sits in one file. |
 
 ## 8. Threat model
 
@@ -464,7 +471,8 @@ Parts are UTF-8 and must not contain a line feed (`0x0A`).
   witness, which here is the policy. Never use them.
 - The verification key depends on the circuit and on the target. Generate it once with
   `bb write_vk`, publish its hash, and have verifiers pin it. A different key means a different
-  circuit.
+  circuit. `fixtures/vk_hashes.txt` records the hashes for this circuit under nargo 1.0.0 and
+  `bb` 6.0.0, and `pnpm --filter @zk-intent-firewall/zk-circuit run prove` fails if they change.
 - The passkey approval should sign more than the bare commitment: include the hash of the
   verification key and a label for this protocol, so that an approval cannot be reinterpreted
   under another circuit.
@@ -479,6 +487,18 @@ Parts are UTF-8 and must not contain a line feed (`0x0A`).
   inputs in order, and edge cases at the top of every integer range and at `p - 1`.
 
 Phase 2's first test should recompute every value in `vectors.json` from its inputs.
+
+A third file, `vk_hashes.txt`, is written by Barretenberg, not by Noir. It records the hash of
+the verification key for each proving target.
+
+The scenario behind the fixtures: a policy that allows at most 500 units of a six-decimal token
+(`max_amount = 500000000`) to five recipients, under scopes 0, 3 and 17, until
+2027-01-01T00:00:00Z. The action pays 125 units to the recipient at position 3 under scope 3, at
+2026-11-12T00:00:00Z. The identifiers follow section 10.4 with the asset
+`eip155:1/erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48`, the accounts `eip155:1:0x1111…1111`
+to `eip155:1:0x5555…5555`, the server `https://payments.example.com/mcp` and the tool
+`send_payment`. The salt and nonce are `to_field("zkif.fixture.v1", "policy-salt")` and
+`to_field("zkif.fixture.v1", "nonce-0001")`. They are public test data.
 
 ## 11. Toolchain and reproducibility
 
@@ -509,4 +529,86 @@ checks that both agree on every fixture value.
 
 ### 11.3 Evidence
 
-TBD-EVIDENCE
+Recorded on 2026-11-12 with the versions above, on a 12th Gen Intel Core i5-12400F (12 threads)
+under WSL2.
+
+**Tests.** `pnpm test` runs `nargo test --workspace --deny-warnings`: 152 tests, all passing.
+
+| Package | Tests | What they cover |
+|---|---|---|
+| `proof_of_intent` | 105 | 75 rejections, each naming the assertion that must fire; 19 acceptances including every boundary; 9 known answers; 2 checks of test helpers |
+| `policy_primitives` | 32 | Hash vectors, tags, sponge definition, Merkle direction and bit order, commitment and binding field by field, scope bits |
+| `testkit` | 15 | The reference tree builder against the circuit's Merkle code |
+
+Every rejection test is a constrained function that calls `main` on witnesses, so the constraints
+run as they do when a proof is made.
+
+**Mutation check.** `scripts/mutation-check.sh` removes each assertion in turn, then applies 38
+other changes to the security path (off-by-one bounds, truncated comparisons, inverted Merkle
+direction, wrong bit order, swapped or missing hash inputs, wrong tags). All 48 mutants are
+killed. The assertion removals:
+
+| Removed assertion | Result | Failing tests |
+|---|---|---|
+| `policy salt must be non-zero` | killed | 1 |
+| `policy commitment mismatch` | killed | 17 |
+| `leaf index out of range` | killed | 3 |
+| `recipient not in allowlist` | killed | 13 |
+| `amount must be non-zero` | killed | 2 |
+| `amount exceeds policy limit` | killed | 9 |
+| `scope index out of range` | killed | 3 |
+| `scope not granted by policy` | killed | 7 |
+| `policy expired` | killed | 8 |
+| `action binding mismatch` | killed | 12 |
+
+For `leaf index out of range` and `scope index out of range` the tests fail because the named
+assertion no longer fires. The inputs are still rejected by the bit decomposition and by
+`scope not granted by policy`, as section 6 explains.
+
+**Compiled circuit.** `nargo compile --print-acir` was read in full:
+
+- An explicit range opcode on each of the seven integer inputs: `current_timestamp` 64 bits,
+  `max_amount` 128, `scope_mask` 64, `expiry` 64, `scope_index` 8, `amount` 128, `leaf_index` 32.
+- 84 one-bit range opcodes: 20 Merkle direction bits and 64 scope bits, each set followed by the
+  equation that recomposes the input.
+- 26 `POSEIDON2_PERMUTATION` opcodes, with initial states `7 * 2^64`, `2 * 2^64`, `3 * 2^64` and
+  `6 * 2^64` for the commitment, the leaf, the nodes and the binding.
+- No memory opcode.
+- Three compiler-generated hints (`directive_invert`, `directive_integer_quotient`,
+  `directive_to_radix`), each followed by the constraints that check its result.
+- Twelve named assertions: the ten of section 6 and the two bit decompositions.
+
+nargo's checks for under-constrained values and for unconstrained Brillig results are on by
+default and are never disabled.
+
+**Size.** `nargo info`: 562 ACIR opcodes. `bb gates`: 5,237 gates.
+
+| Part | Gates |
+|---|---|
+| Fixed cost of the first range check wider than 8 bits | about 2,750 |
+| 26 Poseidon2 permutations at 73 gates | 1,898 |
+| Everything else: bit decompositions, Merkle selects, comparisons, scope selection | about 590 |
+
+The prover pads to the next power of two, 8,192. The circuit has about 2,950 gates of headroom
+before proving cost doubles, and it cannot drop to 4,096 while it has any wide range check, so
+there is nothing to gain from trading clarity for gates here.
+
+**Prove and verify.** `scripts/prove-verify.sh`, median of five runs of the whole `bb` process:
+
+| Target | Prove | Verify | Proof | Verification key |
+|---|---|---|---|---|
+| `noir-recursive` (Poseidon2 transcript, zero-knowledge) | 135 ms | 10 ms | 14,656 bytes | 3,680 bytes |
+| `evm` (Keccak transcript, zero-knowledge) | 109 ms | 7 ms | 7,616 bytes | 1,888 bytes |
+
+For both targets the public inputs of the proof are the three fixture values in order, and
+verification fails when any one of them, or the proof, is changed by one bit.
+
+**Input boundary.** `nargo execute` refuses an input file with `amount = 2^128`,
+`current_timestamp = 2^64`, `expiry = 2^64`, `scope_index = 256`, `leaf_index = 2^32`, or a field
+element equal to `p`, before any witness is generated.
+
+**Cross-implementation.** A JavaScript implementation written from sections 5.3 to 5.7 and 10.4,
+kept outside the repository, recomputed every value in `fixtures/vectors.json` and
+`fixtures/Prover.toml` with three implementations of `H`: `@aztec/bb.js` 5.3.0,
+`@zkpassport/poseidon2` 0.6.2, and the sponge of section 5.3 written out over the bb.js
+permutation. 572 comparisons, no mismatch.
