@@ -1,0 +1,6 @@
+{
+  "name": "@zk-intent-firewall/demo-dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Placeholder for Phase 3: demo dashboard for authoring policies, approving them with a passkey and watching verified agent actions"
+}
