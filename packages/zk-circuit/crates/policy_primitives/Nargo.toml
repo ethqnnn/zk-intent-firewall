@@ -1,0 +1,10 @@
+[package]
+name = "policy_primitives"
+type = "lib"
+authors = ["zk-intent-firewall contributors"]
+compiler_version = "=1.0.0"
+
+[dependencies]
+# Pinned to a tag. nargo has no lockfile, so scripts/check-deps.sh also checks that the tag
+# still resolves to commit e105cdd5c79c222860d53c5dfdb8fa8012b291c0.
+poseidon = { tag = "v0.4.0", git = "https://github.com/noir-lang/poseidon" }
