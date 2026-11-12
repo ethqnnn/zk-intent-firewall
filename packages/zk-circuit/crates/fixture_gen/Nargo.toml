@@ -1,0 +1,9 @@
+[package]
+name = "fixture_gen"
+type = "bin"
+authors = ["zk-intent-firewall contributors"]
+compiler_version = "=1.0.0"
+
+[dependencies]
+policy_primitives = { path = "../policy_primitives" }
+testkit = { path = "../testkit" }
