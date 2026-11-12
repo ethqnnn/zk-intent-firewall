@@ -1,0 +1,23 @@
+{
+  "name": "@zk-intent-firewall/zk-circuit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Noir circuit for zero-knowledge proof of intent: proves that an agent action obeys a committed, hidden policy",
+  "scripts": {
+    "test": "nargo test --workspace --deny-warnings",
+    "build": "nargo compile --package proof_of_intent --deny-warnings",
+    "compile": "nargo compile --package proof_of_intent --deny-warnings",
+    "info": "nargo info --package proof_of_intent",
+    "gates": "nargo compile --package proof_of_intent --deny-warnings && bb gates -b target/proof_of_intent.json",
+    "execute": "nargo execute --package proof_of_intent --prover-name ../../fixtures/Prover",
+    "fmt": "nargo fmt",
+    "fmt:check": "nargo fmt --check",
+    "fixtures:generate": "bash scripts/fixtures.sh write",
+    "fixtures:check": "bash scripts/fixtures.sh check",
+    "check:deps": "bash scripts/check-deps.sh",
+    "check:security-path": "bash scripts/check-security-path.sh",
+    "prove": "bash scripts/prove-verify.sh",
+    "mutation": "bash scripts/mutation-check.sh",
+    "verify": "pnpm run fmt:check && pnpm run check:security-path && pnpm run test && pnpm run check:deps && pnpm run fixtures:check && pnpm run execute"
+  }
+}
