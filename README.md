@@ -14,7 +14,7 @@ tool server learns that the call is allowed and nothing else about the policy.
 |---|---|---|
 | 1 | Noir circuit, spec, fixtures | Done. Not audited. |
 | 2 | TypeScript MCP middleware and verifier SDK | Done. Not audited. See [`packages/mcp-firewall`](packages/mcp-firewall) |
-| 3 | Demo dashboard | Placeholder |
+| 3 | Demo dashboard: passkey-approved policies, revocation, live prompt-injection demo | Done. Not audited. See [`apps/demo-dashboard`](apps/demo-dashboard) |
 
 The licence has not been decided yet, so there is no `LICENSE` file.
 
@@ -30,7 +30,7 @@ packages/zk-circuit/            Noir workspace
   fixtures/                     Prover.toml, vectors.json, vk_hashes.txt
   scripts/                      fixtures, dependency pin, security-path, prove/verify, mutation
 packages/mcp-firewall/          MCP firewall proxy (prover side) and verifier SDK (tool-server side)
-apps/demo-dashboard/            Phase 3 placeholder
+apps/demo-dashboard/            dashboard, passkey registry, sandboxed demo agent (Phase 3)
 ```
 
 ## Prerequisites
@@ -54,8 +54,8 @@ From the repository root:
 
 | Command | What it does |
 |---|---|
-| `pnpm test` | `nargo test` on the circuit workspace (152 tests) and the firewall's vitest suites |
-| `pnpm build` | Compile the circuit to `packages/zk-circuit/target/proof_of_intent.json` |
+| `pnpm test` | `nargo test` on the circuit workspace (152 tests), and the firewall's and the dashboard's vitest suites |
+| `pnpm build` | Compile the circuit to `packages/zk-circuit/target/proof_of_intent.json`, build the firewall and the dashboard |
 | `pnpm circuit:test` | The same tests, through the circuit package |
 | `pnpm circuit:info` | ACIR opcode count |
 | `pnpm circuit:execute` | Run the circuit on `fixtures/Prover.toml` |
@@ -64,6 +64,12 @@ From the repository root:
 | `pnpm firewall:test` | The firewall's vitest suites |
 | `pnpm firewall:typecheck` | TypeScript check of the firewall |
 | `pnpm firewall:check:bbjs` | bb.js prove/verify round trip, key hashes, cross-check with native `bb` |
+| `pnpm dashboard:build` then `pnpm dashboard:start` | Serve the dashboard on <http://localhost:5173>; open the printed URL |
+| `pnpm dashboard:dev` | The dashboard through Vite, with hot reload |
+| `pnpm dashboard:demo` | The demo in the terminal: approve, run the agent, print the transcript |
+| `pnpm dashboard:test` | The dashboard's vitest suites (real processes, real proofs) |
+| `pnpm dashboard:test:e2e` | Playwright through the dashboard with a virtual authenticator; `RECORD=1` keeps a video |
+| `pnpm dashboard:mutation` | Mutation check of the dashboard's security checks |
 
 In `packages/zk-circuit`:
 

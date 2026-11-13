@@ -18,6 +18,14 @@
     "circuit:verify": "pnpm --filter @zk-intent-firewall/zk-circuit run verify",
     "firewall:test": "pnpm --filter @zk-intent-firewall/mcp-firewall run test",
     "firewall:typecheck": "pnpm --filter @zk-intent-firewall/mcp-firewall run typecheck",
-    "firewall:check:bbjs": "pnpm --filter @zk-intent-firewall/mcp-firewall run check:bbjs"
+    "firewall:check:bbjs": "pnpm --filter @zk-intent-firewall/mcp-firewall run check:bbjs",
+    "dashboard:dev": "pnpm --filter @zk-intent-firewall/demo-dashboard run dev",
+    "dashboard:build": "pnpm --filter @zk-intent-firewall/demo-dashboard run build",
+    "dashboard:start": "pnpm --filter @zk-intent-firewall/demo-dashboard run start",
+    "dashboard:demo": "pnpm --filter @zk-intent-firewall/demo-dashboard run demo",
+    "dashboard:test": "pnpm --filter @zk-intent-firewall/demo-dashboard run test",
+    "dashboard:test:e2e": "pnpm --filter @zk-intent-firewall/demo-dashboard run test:e2e",
+    "dashboard:mutation": "pnpm --filter @zk-intent-firewall/demo-dashboard run mutation",
+    "dashboard:typecheck": "pnpm --filter @zk-intent-firewall/demo-dashboard run typecheck"
   }
 }
