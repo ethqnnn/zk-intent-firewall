@@ -71,9 +71,11 @@ export function assistantOverride(body: string): string | undefined {
 }
 
 export async function runScriptedAgent(io: AgentIo, instruction: string, paceMs = 0): Promise<void> {
+  // Unique across runs, so that audit entries from different runs never share an id.
+  const run = globalThis.crypto.randomUUID().slice(0, 8);
   let n = 0;
   const call = async (tool: string, args: Record<string, unknown>) => {
-    const callId = `c${++n}`;
+    const callId = `${run}-${++n}`;
     io.emit({ kind: 'tool_call', callId, tool, args });
     const r = await io.callTool(tool, args, callId);
     io.emit({ kind: 'tool_result', callId, isError: r.isError, text: r.text });

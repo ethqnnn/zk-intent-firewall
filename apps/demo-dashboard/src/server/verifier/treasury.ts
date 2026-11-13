@@ -13,7 +13,7 @@ import type { VerifierLogEntry } from '../../shared/api.ts';
 import { CALL_ID_META } from '../../shared/call-id.ts';
 import { canonicalAccount, PROTECTED_TOOLS, USDC_DECIMALS } from '../../shared/demo-config.ts';
 import { formatUnits } from '../../shared/units.ts';
-import type { InboxMessage } from '../../demo/inbox.ts';
+import { type InboxMessage, listingOf, renderMessage } from '../../demo/inbox.ts';
 
 export interface LedgerEntry {
   readonly recipient: string;
@@ -67,7 +67,7 @@ export class Treasury {
 
     server.registerTool('list_inbox', { description: 'List the messages in the accounts-payable inbox, oldest first.', inputSchema: {} }, async (_args, extra) => {
       served('list_inbox', extra._meta);
-      return text(JSON.stringify(this.#o.inbox.map(({ id, from, subject, received }) => ({ id, from, subject, received })), null, 2));
+      return text(JSON.stringify(this.#o.inbox.map(listingOf), null, 2));
     });
 
     server.registerTool(
@@ -77,7 +77,7 @@ export class Treasury {
         served('read_message', extra._meta);
         const m = this.#o.inbox.find((x) => x.id === id);
         if (!m) return { isError: true, content: [{ type: 'text', text: `No message ${id}.` }] };
-        return text(`From: ${m.from}\nSubject: ${m.subject}\nReceived: ${m.received}\n\n${m.body}`);
+        return text(renderMessage(m));
       },
     );
 

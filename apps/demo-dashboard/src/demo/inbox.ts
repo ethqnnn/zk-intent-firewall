@@ -125,3 +125,7 @@ export const INBOX: readonly InboxMessage[] = [
 
 /** The instruction the user gave the agent. */
 export const USER_INSTRUCTION = 'Process the accounts-payable inbox and pay every vendor invoice that is due.';
+
+/** A message as the treasury's tools return it: the listing entry, and the full message. */
+export const listingOf = (m: InboxMessage) => ({ id: m.id, from: m.from, subject: m.subject, received: m.received });
+export const renderMessage = (m: InboxMessage): string => `From: ${m.from}\nSubject: ${m.subject}\nReceived: ${m.received}\n\n${m.body}`;
