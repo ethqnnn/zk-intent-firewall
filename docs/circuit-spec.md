@@ -474,14 +474,15 @@ Parts are UTF-8 and must not contain a line feed (`0x0A`).
 
 ### 10.5 Proving target and keys
 
-- **Always use a zero-knowledge target.** In `bb` 6.0.0 the default target is zero-knowledge.
-  `noir-recursive` (Poseidon2 transcript, the default) and `evm` (Keccak transcript, a proof about
-  half the size) were both exercised in Phase 1. The `*-no-zk` targets leak information about the
-  witness, which here is the policy. Never use them.
+- **Always use a zero-knowledge target.** In `bb` 5.3.0, the version this project pins, the default
+  target is zero-knowledge. `noir-recursive` (Poseidon2 transcript, the default) and `evm` (Keccak
+  transcript, a proof about half the size) were both exercised in Phase 1. The `*-no-zk` targets
+  leak information about the witness, which here is the policy. Never use them.
 - The verification key depends on the circuit and on the target. Generate it once with
   `bb write_vk`, publish its hash, and have verifiers pin it. A different key means a different
   circuit. `fixtures/vk_hashes.txt` records the hashes for this circuit under nargo 1.0.0 and
-  `bb` 6.0.0, and `pnpm --filter @zk-intent-firewall/zk-circuit run prove` fails if they change.
+  `bb` 5.3.0; they are confirmed identical under `bb` 6.0.0. `pnpm --filter
+  @zk-intent-firewall/zk-circuit run prove` fails if they change.
 - The passkey approval should sign more than the bare commitment: include the hash of the
   verification key and a label for this protocol, so that an approval cannot be reinterpreted
   under another circuit.
