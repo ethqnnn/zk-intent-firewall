@@ -83,7 +83,7 @@ Public inputs, in order: `policy_commitment`, `current_timestamp`, `action_bindi
 | ACIR opcodes (`nargo info`) | 562 |
 | Gates (`bb gates`) | 5,237 |
 | Poseidon2 permutations | 26 |
-| Prove, `bb` 5.3.0, 12 threads | about 234 to 239 ms (`noir-recursive`), 167 to 173 ms (`evm`) |
+| Prove, `bb` 5.3.0, 12 threads | about 230 to 250 ms (`noir-recursive`), 167 to 173 ms (`evm`) |
 | Verify | about 9 to 10 ms (`noir-recursive`), 7 ms (`evm`) |
 | Proof size | 7,616 bytes (`evm` target) or 14,656 bytes (`noir-recursive` target) |
 
