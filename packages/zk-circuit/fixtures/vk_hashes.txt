@@ -1,5 +1,5 @@
 # Verification key hashes of the proof_of_intent circuit, one line per verifier target.
-# Written by scripts/prove-verify.sh with nargo 1.0.0 and bb 6.0.0.
+# Written by scripts/prove-verify.sh with nargo 1.0.0 and bb 5.3.0.
 # A different hash means a different circuit, and every verifier must be updated.
 noir-recursive 0x15bd93c9bb5f2c9bfe73268360c1a69892eb13777e084bdc282d2125fb6cb3de
 evm 0x0ada696cfd9ba778ed3c2b4d1cb79a4efc0e9a389f2561cd86d6f5b1eba9557b
