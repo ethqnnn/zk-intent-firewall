@@ -605,11 +605,12 @@ before proving cost doubles, and it cannot drop to 4,096 while it has any wide r
 there is nothing to gain from trading clarity for gates here.
 
 **Prove and verify.** `scripts/prove-verify.sh` with `bb` 5.3.0, median of the whole `bb` process
-per run; the range spans three runs (one of five samples, two of nine):
+per run; the ranges span three runs (one of five samples, two of nine), with the `noir-recursive`
+prove range widened to 230–250 ms for run-to-run variance after a later run measured 248 ms:
 
 | Target | Prove | Verify | Proof | Verification key |
 |---|---|---|---|---|
-| `noir-recursive` (Poseidon2 transcript, zero-knowledge) | 234–239 ms | 9–10 ms | 14,656 bytes | 3,680 bytes |
+| `noir-recursive` (Poseidon2 transcript, zero-knowledge) | 230–250 ms | 9–10 ms | 14,656 bytes | 3,680 bytes |
 | `evm` (Keccak transcript, zero-knowledge) | 167–173 ms | 7 ms | 7,616 bytes | 1,888 bytes |
 
 History: Phase 1 measured `bb` 6.0.0 at 135 ms and 109 ms to prove, 10 ms and 7 ms to verify.
