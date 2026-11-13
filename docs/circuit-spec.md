@@ -390,18 +390,27 @@ inputs without them: an index of `2^20` or more has no 20-bit decomposition, and
 | Purpose | Package | Notes |
 |---|---|---|
 | Witness generation | `@noir-lang/noir_js` 1.0.0 | Must match nargo 1.0.0, which compiled the circuit. |
-| Proving and verifying | `@aztec/bb.js`, or the native `bb` 6.0.0 | See the version warning below. |
+| Proving and verifying | `@aztec/bb.js` 5.3.0, or the native `bb` 5.3.0 | Pinned. See the version note below. |
 | `H` in TypeScript | `@aztec/bb.js`, or `@zkpassport/poseidon2` | Both checked against the fixtures in Phase 1. |
 
 The hash was checked outside the repository on 2026-11-12: an independent JavaScript
 implementation of sections 5.3 to 5.7 reproduced every value in `fixtures/vectors.json` with both
 `@aztec/bb.js` 5.3.0 and `@zkpassport/poseidon2` 0.6.2.
 
-**Version warning.** bbup pairs nargo 1.0.0 with `bb` 6.0.0, and that is what Phase 1 used. On
-2026-11-12 npm had no stable `@aztec/bb.js` 6.0.0: `latest` was 5.3.0 and 6.0.0 existed only as
-nightlies. The hash output does not depend on this, but the proof and key formats may. Phase 2
-must pick one Barretenberg version for both prover and verifier, generate the verification key
-with that version, and confirm a full prove and verify round trip before relying on it.
+**Version note.** The project pins Barretenberg 5.3.0: `@aztec/bb.js` 5.3.0 (npm `latest`) in
+`packages/mcp-firewall`, and native `bb` 5.3.0 (`bbup -v 5.3.0`) as the matching CLI. Checked on
+2026-11-13:
+
+- The verification keys of 5.3.0 and 6.0.0 are byte-identical, so `fixtures/vk_hashes.txt` holds
+  for both.
+- Proofs do not cross-verify between the 5.3.0 and 6.0.0 lines, in either direction
+  (`UltraVerifier: verification failed at reduction step`). Every prover and verifier must run
+  5.3.0.
+- bb.js 5.3.0 and native `bb` 5.3.0 verify each other's proofs on both targets.
+  `pnpm firewall:check:bbjs` repeats the round trip and the cross-check.
+
+History: Phase 1 used `bb` 6.0.0, bbup's default pairing for nargo 1.0.0, which has no stable
+bb.js release on npm.
 
 ### 10.2 Prover flow
 
@@ -465,14 +474,15 @@ Parts are UTF-8 and must not contain a line feed (`0x0A`).
 
 ### 10.5 Proving target and keys
 
-- **Always use a zero-knowledge target.** In `bb` 6.0.0 the default target is zero-knowledge.
-  `noir-recursive` (Poseidon2 transcript, the default) and `evm` (Keccak transcript, a proof about
-  half the size) were both exercised in Phase 1. The `*-no-zk` targets leak information about the
-  witness, which here is the policy. Never use them.
+- **Always use a zero-knowledge target.** In `bb` 5.3.0, the version this project pins, the default
+  target is zero-knowledge. `noir-recursive` (Poseidon2 transcript, the default) and `evm` (Keccak
+  transcript, a proof about half the size) were both exercised in Phase 1. The `*-no-zk` targets
+  leak information about the witness, which here is the policy. Never use them.
 - The verification key depends on the circuit and on the target. Generate it once with
   `bb write_vk`, publish its hash, and have verifiers pin it. A different key means a different
   circuit. `fixtures/vk_hashes.txt` records the hashes for this circuit under nargo 1.0.0 and
-  `bb` 6.0.0, and `pnpm --filter @zk-intent-firewall/zk-circuit run prove` fails if they change.
+  `bb` 5.3.0; they are confirmed identical under `bb` 6.0.0. `pnpm --filter
+  @zk-intent-firewall/zk-circuit run prove` fails if they change.
 - The passkey approval should sign more than the bare commitment: include the hash of the
   verification key and a label for this protocol, so that an approval cannot be reinterpreted
   under another circuit.
@@ -507,7 +517,7 @@ to `eip155:1:0x5555…5555`, the server `https://payments.example.com/mcp` and t
 | Component | Version | Pinned by |
 |---|---|---|
 | nargo / noirc | 1.0.0 (commit `275d3ab1a5c916c6ea73e8d6b943f685f574500c`) | `compiler_version = "=1.0.0"` in every `Nargo.toml` |
-| Barretenberg `bb` | 6.0.0 | bbup's pairing for nargo 1.0.0 |
+| Barretenberg `bb` | 5.3.0 | `bbup -v 5.3.0`. Matches `@aztec/bb.js` 5.3.0, pinned exactly in `packages/mcp-firewall` (section 10.1). Phase 1 originally used 6.0.0 |
 | `noir-lang/poseidon` | tag `v0.4.0`, commit `e105cdd5c79c222860d53c5dfdb8fa8012b291c0` | `tag` in `Nargo.toml`, and `scripts/check-deps.sh` compares the fetched commit |
 | Node.js | 26.13.1 | `.nvmrc`, `engines` |
 | pnpm | 12.18.0 | `packageManager`, `engines` |
@@ -529,8 +539,9 @@ tests check that both agree on the fixture's commitment, binding, leaves, root a
 
 ### 11.3 Evidence
 
-Recorded on 2026-11-12 with the versions above, on a 12th Gen Intel Core i5-12400F (12 threads)
-under WSL2.
+Recorded on 2026-11-12 on a 12th Gen Intel Core i5-12400F (12 threads) under WSL2. The prove and
+verify figures were re-recorded on 2026-11-13 with `bb` 5.3.0 on the same machine; every other
+`bb` figure (gates, sizes, key hashes) is identical under 5.3.0 and 6.0.0.
 
 **Tests.** `pnpm test` runs `nargo test --workspace --deny-warnings`: 152 tests, all passing.
 
@@ -593,12 +604,17 @@ The prover pads to the next power of two, 8,192. The circuit has about 2,950 gat
 before proving cost doubles, and it cannot drop to 4,096 while it has any wide range check, so
 there is nothing to gain from trading clarity for gates here.
 
-**Prove and verify.** `scripts/prove-verify.sh`, median of five runs of the whole `bb` process:
+**Prove and verify.** `scripts/prove-verify.sh` with `bb` 5.3.0, median of the whole `bb` process
+per run; the ranges span three runs (one of five samples, two of nine), with the prove ranges
+widened for run-to-run variance after a later run measured 248 ms (`noir-recursive`) and 174 ms
+(`evm`):
 
 | Target | Prove | Verify | Proof | Verification key |
 |---|---|---|---|---|
-| `noir-recursive` (Poseidon2 transcript, zero-knowledge) | 135 ms | 10 ms | 14,656 bytes | 3,680 bytes |
-| `evm` (Keccak transcript, zero-knowledge) | 109 ms | 7 ms | 7,616 bytes | 1,888 bytes |
+| `noir-recursive` (Poseidon2 transcript, zero-knowledge) | 230–250 ms | 9–10 ms | 14,656 bytes | 3,680 bytes |
+| `evm` (Keccak transcript, zero-knowledge) | 165–180 ms | 7 ms | 7,616 bytes | 1,888 bytes |
+
+History: Phase 1 measured `bb` 6.0.0 at 135 ms and 109 ms to prove, 10 ms and 7 ms to verify.
 
 For both targets the public inputs of the proof are the three fixture values in order, and
 verification fails when any one of them, or the proof, is changed by one bit.
