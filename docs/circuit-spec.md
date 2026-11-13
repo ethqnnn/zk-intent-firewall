@@ -370,7 +370,7 @@ inputs without them: an index of `2^20` or more has no 20-bit decomposition, and
 |---|---|---|
 | L1 | **Per-action limit only.** An agent can make many actions that each pass. There is no cumulative budget, velocity limit or count limit. | The verifier or payment gateway, or the SaaS layer. A later circuit version could prove a running total against a committed state. |
 | L2 | **No revocation.** A proof for a revoked policy still verifies until `expiry`. | The verifier must check that the commitment is still registered when it verifies. |
-| L3 | **No proof of human approval in the circuit.** | Phase 2 verifies the passkey signature over the commitment off-circuit (D11). |
+| L3 | **No proof of human approval in the circuit.** | Phase 3 (`apps/demo-dashboard`) verifies the passkey signature over the commitment off-circuit (D11). |
 | L4 | **Replay tracking is outside the circuit.** | The verifier stores seen bindings for as long as it would accept their timestamp. |
 | L5 | **One limit, one unit.** `max_amount` is a bare number. If an allowlist mixes assets with different units, the same number applies to all of them. | Phase 2 must make the recipient identifier commit to the asset and network (section 10.4) and should use one policy per asset. |
 | L6 | **Exact-match allowlist.** There is no wildcard and no "any recipient" policy. | Tools without a recipient use an agreed resource identifier. |
