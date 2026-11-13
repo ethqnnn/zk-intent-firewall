@@ -15,6 +15,9 @@
     "circuit:info": "pnpm --filter @zk-intent-firewall/zk-circuit run info",
     "circuit:execute": "pnpm --filter @zk-intent-firewall/zk-circuit run execute",
     "circuit:fmt:check": "pnpm --filter @zk-intent-firewall/zk-circuit run fmt:check",
-    "circuit:verify": "pnpm --filter @zk-intent-firewall/zk-circuit run verify"
+    "circuit:verify": "pnpm --filter @zk-intent-firewall/zk-circuit run verify",
+    "firewall:test": "pnpm --filter @zk-intent-firewall/mcp-firewall run test",
+    "firewall:typecheck": "pnpm --filter @zk-intent-firewall/mcp-firewall run typecheck",
+    "firewall:check:bbjs": "pnpm --filter @zk-intent-firewall/mcp-firewall run check:bbjs"
   }
 }

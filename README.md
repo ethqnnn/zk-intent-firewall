@@ -13,7 +13,7 @@ tool server learns that the call is allowed and nothing else about the policy.
 | Phase | Part | State |
 |---|---|---|
 | 1 | Noir circuit, spec, fixtures | Done. Not audited. |
-| 2 | TypeScript MCP middleware and verifier SDK | Placeholder |
+| 2 | TypeScript MCP middleware and verifier SDK | Done. Not audited. See [`packages/mcp-firewall`](packages/mcp-firewall) |
 | 3 | Demo dashboard | Placeholder |
 
 The licence has not been decided yet, so there is no `LICENSE` file.
@@ -29,7 +29,7 @@ packages/zk-circuit/            Noir workspace
   crates/fixture_gen/           prints the fixtures
   fixtures/                     Prover.toml, vectors.json, vk_hashes.txt
   scripts/                      fixtures, dependency pin, security-path, prove/verify, mutation
-packages/mcp-firewall/          Phase 2 placeholder
+packages/mcp-firewall/          MCP firewall proxy (prover side) and verifier SDK (tool-server side)
 apps/demo-dashboard/            Phase 3 placeholder
 ```
 
@@ -45,7 +45,8 @@ Exact versions this was built and tested with:
 | pnpm | 12.18.0 | pinned by `packageManager` |
 | `noir-lang/poseidon` | tag `v0.4.0`, commit `e105cdd5c79c222860d53c5dfdb8fa8012b291c0` | fetched by nargo on first use |
 
-The project has no JavaScript dependencies. `pnpm-lock.yaml` pins only pnpm itself.
+`packages/mcp-firewall` pins `@aztec/bb.js` 5.3.0 and `@noir-lang/noir_js` 1.0.0 exactly; see its
+README for why 5.3.0 and how it relates to the `bb` used for Phase 1.
 
 ## Commands
 
@@ -53,13 +54,16 @@ From the repository root:
 
 | Command | What it does |
 |---|---|
-| `pnpm test` | `nargo test` on the whole workspace: 152 tests |
+| `pnpm test` | `nargo test` on the circuit workspace (152 tests) and the firewall's vitest suites |
 | `pnpm build` | Compile the circuit to `packages/zk-circuit/target/proof_of_intent.json` |
 | `pnpm circuit:test` | The same tests, through the circuit package |
 | `pnpm circuit:info` | ACIR opcode count |
 | `pnpm circuit:execute` | Run the circuit on `fixtures/Prover.toml` |
 | `pnpm circuit:fmt:check` | `nargo fmt --check` |
 | `pnpm circuit:verify` | Format check, security-path check, tests, dependency pin, fixture check, execute |
+| `pnpm firewall:test` | The firewall's vitest suites |
+| `pnpm firewall:typecheck` | TypeScript check of the firewall |
+| `pnpm firewall:check:bbjs` | bb.js prove/verify round trip, key hashes, cross-check with native `bb` |
 
 In `packages/zk-circuit`:
 
