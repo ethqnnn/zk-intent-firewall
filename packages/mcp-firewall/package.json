@@ -1,6 +1,14 @@
 {
   "name": "@zk-intent-firewall/mcp-firewall",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Placeholder for Phase 2: TypeScript MCP middleware that intercepts sensitive tool calls and attaches a zero-knowledge proof of intent"
+  "description": "MCP middleware that blocks sensitive tool calls unless they carry a zero-knowledge proof of intent",
+  "type": "module",
+  "scripts": {
+    "check:bbjs": "node scripts/bbjs-roundtrip.mjs"
+  },
+  "dependencies": {
+    "@aztec/bb.js": "5.3.0",
+    "@noir-lang/noir_js": "1.0.0"
+  }
 }
