@@ -18,7 +18,7 @@ const dev = process.argv.includes('--dev');
 const port = Number(process.argv.find((a) => a.startsWith('--port='))?.slice(7) ?? process.env['ZKIF_PORT'] ?? 5173);
 
 const server = createServer();
-await new Promise<void>((r) => server.listen(port, '127.0.0.1', r));
+const server6 = createServer();
 // WebAuthn needs a domain as RP ID, not an IP address; localhost is a secure context.
 const origin = `http://localhost:${port}`;
 
@@ -33,6 +33,15 @@ if (dev) {
 }
 const handle = createRequestHandler(host, http);
 server.on('request', (req, res) => void handle(req, res));
+server6.on('request', (req, res) => void handle(req, res));
+
+// Listen only once requests have a handler: one accepted earlier would hang unanswered.
+// Loopback only. `localhost` may resolve to ::1 or 127.0.0.1 first, so listen on both.
+await new Promise<void>((r) => server.listen(port, '127.0.0.1', r));
+await new Promise<void>((r) => {
+  server6.once('error', () => r()); // no IPv6 loopback on this machine
+  server6.listen(port, '::1', r);
+});
 
 console.log(`\nzk-intent-firewall dashboard${dev ? ' (dev)' : ''}`);
 console.log(`  Open: ${origin}/#token=${host.sessionToken}`);
@@ -40,6 +49,7 @@ console.log('  The token is the key to this dashboard. Do not share the URL.\n')
 
 const shutdown = async () => {
   server.close();
+  server6.close();
   await host.stop();
   process.exit(0);
 };
