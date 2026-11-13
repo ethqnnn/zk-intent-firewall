@@ -9,6 +9,11 @@
  *
  * Only apps/demo-dashboard is mutated. packages/mcp-firewall and packages/zk-circuit have their own
  * suites and are not touched.
+ *
+ * A mutant must weaken its check the way a real bug would, without breaking anything else: one
+ * that makes valid approvals fail too is killed for the wrong reason. Checks made inside
+ * @simplewebauthn/server that cannot be switched off without that (the RP ID hash, the
+ * webauthn.get type, the signature itself) are covered by direct tests instead.
  */
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -70,21 +75,10 @@ const MUTANTS: readonly Mutant[] = [
   },
   {
     id: 'R6',
-    check: 'Signed statement covers every pinned VK hash',
+    check: 'Signed statement covers every accepted VK hash',
     file: REGISTRY,
-    edits: [
-      {
-        find: 'vkHashes: this.vkHashes(), nonce: request.nonce };',
-        replace: "vkHashes: { 'noir-recursive': PINNED_VERIFICATION_KEYS['noir-recursive'].bbHash }, nonce: request.nonce };",
-      },
-    ],
-    tests: T_REGISTRY,
-  },
-  {
-    id: 'R7',
-    check: 'Signed statement carries the protocol label',
-    file: REGISTRY,
-    edits: [{ find: 'const statement: ApprovalStatement = { label: APPROVAL_LABEL, action, policyCommitment', replace: "const statement: ApprovalStatement = { label: 'zkif.webauthn.v1', action, policyCommitment" }],
+    // Consistently on both sides (issued and verified): only the first accepted key is covered.
+    edits: [{ find: 'for (const t of this.#o.acceptedTargets) out[t] = PINNED_VERIFICATION_KEYS[t].bbHash;', replace: 'for (const t of this.#o.acceptedTargets.slice(0, 1)) out[t] = PINNED_VERIFICATION_KEYS[t].bbHash;' }],
     tests: T_REGISTRY,
   },
   {
@@ -106,16 +100,14 @@ const MUTANTS: readonly Mutant[] = [
   },
   {
     id: 'R10',
-    check: 'Assertion origin is checked',
+    check: 'Assertion origin is checked against the configured origins, not the client’s claim',
     file: REGISTRY,
-    edits: [{ find: '        expectedOrigin: [...this.#o.expectedOrigins],\n        expectedRPID: this.#o.rpId,\n        credential: owner,', replace: '        expectedOrigin: ((o: string) => o.length > 0) as never,\n        expectedRPID: this.#o.rpId,\n        credential: owner,' }],
-    tests: T_REGISTRY,
-  },
-  {
-    id: 'R11',
-    check: 'Assertion RP ID is checked',
-    file: REGISTRY,
-    edits: [{ find: '        expectedRPID: this.#o.rpId,\n        credential: owner,', replace: '        expectedRPID: undefined as never,\n        credential: owner,' }],
+    edits: [
+      {
+        find: '        expectedOrigin: [...this.#o.expectedOrigins],\n        expectedRPID: this.#o.rpId,\n        credential: owner,',
+        replace: "        expectedOrigin: JSON.parse(Buffer.from(response.response.clientDataJSON, 'base64url').toString('utf8')).origin,\n        expectedRPID: this.#o.rpId,\n        credential: owner,",
+      },
+    ],
     tests: T_REGISTRY,
   },
   {
@@ -180,6 +172,14 @@ const MUTANTS: readonly Mutant[] = [
     check: 'Statement text includes the action',
     file: 'src/shared/approval.ts',
     edits: [{ find: '    `action: ${s.action}`,\n', replace: '' }],
+    tests: ['test/approval.test.ts', ...T_REGISTRY],
+  },
+
+  {
+    id: 'S4',
+    check: 'Statement text includes the protocol label',
+    file: 'src/shared/approval.ts',
+    edits: [{ find: '  const lines = [\n    s.label,\n', replace: '  const lines = [\n' }],
     tests: ['test/approval.test.ts', ...T_REGISTRY],
   },
 
