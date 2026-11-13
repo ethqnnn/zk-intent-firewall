@@ -10,13 +10,13 @@
 //   3. proves with bb.js and verifies with bb.js against that key,
 //   4. checks the proof's public inputs are the three fixture values in order,
 //   5. checks that changing any public input or the proof makes verification fail,
-//   6. if native `bb` is on PATH: verifies the bb.js proof with native bb, and the native bb proof
+//   6. if a native `bb` is found ($BB, or PATH outside node_modules): verifies the bb.js proof with native bb, and the native bb proof
 //      (packages/zk-circuit/target/bb/<target>) with bb.js.
 //
 // Exits non-zero on any mismatch. Never uses a "-no-zk" target.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { join, dirname } from 'node:path';
+import { delimiter, dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Barretenberg, BackendType, UltraHonkBackend, UltraHonkVerifierBackend } from '@aztec/bb.js';
 import { Noir } from '@noir-lang/noir_js';
@@ -62,14 +62,25 @@ check(witness.length > 0, `noir_js ${noirJsVersion} generated the witness (${wit
 const api = await Barretenberg.new({ backend: BackendType.Wasm, threads: 1 });
 const backend = new UltraHonkBackend(circuit.bytecode, api);
 const verifier = new UltraHonkVerifierBackend(api);
+// The native bb to cross-check against: $BB, or the first `bb` on PATH outside node_modules.
+// (pnpm puts node_modules/.bin first, where bb.js links its own bundled binary, which would make
+// the cross-check bb.js against itself.)
+const bbPath =
+  process.env.BB ??
+  (process.env.PATH ?? '')
+    .split(delimiter)
+    .filter((d) => d && !d.split(sep).includes('node_modules'))
+    .map((d) => join(d, 'bb'))
+    .find((f) => existsSync(f));
 const nativeBb = (() => {
+  if (!bbPath) return null;
   try {
-    return execFileSync('bb', ['--version'], { encoding: 'utf8' }).trim();
+    return execFileSync(bbPath, ['--version'], { encoding: 'utf8' }).trim();
   } catch {
     return null;
   }
 })();
-console.log(`bb.js ${bbjsVersion}, backend: Wasm. native bb on PATH: ${nativeBb ?? 'none'}`);
+console.log(`bb.js ${bbjsVersion}, backend: Wasm. native bb: ${nativeBb ? `${nativeBb} (${bbPath})` : 'none'}`);
 
 // Scratch files for the native cross-check live in the package's gitignored target/ directory.
 const work = join(here, '..', 'target', 'bbjs-roundtrip');
@@ -130,7 +141,7 @@ for (const target of ['noir-recursive', 'evm']) {
     writeFileSync(join(dir, 'public_inputs'), Buffer.concat(proofData.publicInputs.map((x) => Buffer.from(x.slice(2), 'hex'))));
     let nativeOk = true;
     try {
-      execFileSync('bb', ['verify', '-k', join(dir, 'vk'), '-p', join(dir, 'proof'), '-i', join(dir, 'public_inputs'), '-t', target], { stdio: 'pipe' });
+      execFileSync(bbPath, ['verify', '-k', join(dir, 'vk'), '-p', join(dir, 'proof'), '-i', join(dir, 'public_inputs'), '-t', target], { stdio: 'pipe' });
     } catch (e) {
       nativeOk = false;
       console.log(String(e.stderr ?? e));
