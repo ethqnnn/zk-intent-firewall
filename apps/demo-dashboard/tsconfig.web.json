@@ -16,5 +16,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src/web", "src/shared"]
+  "include": ["src/web", "src/shared", "test/browser-*.test.ts"]
 }

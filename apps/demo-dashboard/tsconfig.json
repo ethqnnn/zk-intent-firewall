@@ -17,5 +17,7 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src/server", "src/agent", "src/ipc", "src/shared", "src/demo", "test", "scripts", "e2e", "*.config.ts"]
+  "include": ["src/server", "src/agent", "src/ipc", "src/shared", "src/demo", "test", "scripts", "e2e", "*.config.ts"],
+  // Tests of browser code are checked with the browser program (tsconfig.web.json).
+  "exclude": ["test/browser-*.test.ts"]
 }

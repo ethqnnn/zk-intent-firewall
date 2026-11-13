@@ -35,9 +35,15 @@ async function probe(sandboxed: boolean): Promise<Record<string, string>> {
   const child = sandboxed
     ? spawnSandboxed(PROBE, [arg]).child
     : fork(PROBE, [arg], { stdio: ['ignore', 'pipe', 'pipe', 'ipc'], serialization: 'json', env: { ...process.env, ZKIF_PROBE_CONTROL: '1' } });
+  let output = '';
+  child.stdout?.on('data', (b: Buffer) => (output += b.toString()));
+  child.stderr?.on('data', (b: Buffer) => (output += b.toString()));
   try {
-    const [report] = (await once(child, 'message')) as [Record<string, string>];
-    return report;
+    // Fail fast if the probe dies instead of reporting.
+    return await new Promise<Record<string, string>>((resolveReport, reject) => {
+      child.once('message', (m) => resolveReport(m as Record<string, string>));
+      child.once('exit', (code) => reject(new Error(`probe exited with ${code} without reporting:\n${output}`)));
+    });
   } finally {
     child.kill();
     tcp.close();
@@ -152,6 +158,13 @@ describe('no policy value leaves the browser and the firewall', () => {
       expect(r.status, path).toBe(200);
       expect(leaks([await r.text()]), path).toEqual([]);
     }
+  });
+
+  it('a policy needs a salt of at least 128 bits, drawn in the browser', async () => {
+    const req = { maxAmount: '1000000', recipients: [PAYEES.fabrikam.account], scopes: ['payments.send'], expiry: '4102444800' };
+    await expect(host.preparePolicy({ ...req, salt: '0x' + 'ff'.repeat(15) } as never)).rejects.toThrow(/128 bits/);
+    await expect(host.preparePolicy({ ...req, salt: '0x0' } as never)).rejects.toThrow();
+    await expect(host.preparePolicy({ ...req, salt: '0x01' + '00'.repeat(16) } as never)).resolves.toHaveProperty('policyCommitment');
   });
 
   describe('dashboard API guards', () => {
