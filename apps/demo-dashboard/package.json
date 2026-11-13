@@ -1,6 +1,42 @@
 {
   "name": "@zk-intent-firewall/demo-dashboard",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Placeholder for Phase 3: demo dashboard for authoring policies, approving them with a passkey and watching verified agent actions"
+  "description": "Passkey dashboard and live demo: author a policy, approve it with a passkey, watch the firewall block a prompt injection",
+  "type": "module",
+  "engines": {
+    "node": ">=26.0.0"
+  },
+  "scripts": {
+    "deps:build": "pnpm --filter @zk-intent-firewall/mcp-firewall run build",
+    "dev": "pnpm run deps:build && node src/server/main.ts --dev",
+    "build": "pnpm run deps:build && vite build",
+    "start": "node src/server/main.ts",
+    "demo": "pnpm run deps:build && node src/demo/cli.ts",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.web.json",
+    "test": "pnpm run deps:build && vitest run",
+    "test:e2e": "pnpm run build && playwright test",
+    "mutation": "pnpm run deps:build && node scripts/mutation-check.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@simplewebauthn/browser": "14.0.0",
+    "@simplewebauthn/server": "14.1.0",
+    "@zk-intent-firewall/mcp-firewall": "workspace:*",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.0",
+    "@tailwindcss/vite": "4.3.5",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.0.5"
+  }
 }
