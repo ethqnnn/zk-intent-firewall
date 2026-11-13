@@ -1,0 +1,10 @@
+[package]
+name = "proof_of_intent"
+type = "bin"
+authors = ["zk-intent-firewall contributors"]
+compiler_version = "=1.0.0"
+
+[dependencies]
+policy_primitives = { path = "../policy_primitives" }
+# Test-only. nargo has no dev-dependencies section. Nothing in main.nr imports it.
+testkit = { path = "../testkit" }

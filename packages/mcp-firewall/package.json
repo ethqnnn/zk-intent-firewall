@@ -1,0 +1,6 @@
+{
+  "name": "@zk-intent-firewall/mcp-firewall",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Placeholder for Phase 2: TypeScript MCP middleware that intercepts sensitive tool calls and attaches a zero-knowledge proof of intent"
+}
