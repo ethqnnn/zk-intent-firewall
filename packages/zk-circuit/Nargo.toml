@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "crates/policy_primitives",
+    "crates/proof_of_intent",
+    "crates/testkit",
+    "crates/fixture_gen",
+]
+default-member = "crates/proof_of_intent"

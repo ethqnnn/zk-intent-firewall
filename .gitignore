@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Build output (nargo and bb artifacts: ACIR, witnesses, proofs, keys)
+target/
+
+# Environment files. Never commit secrets.
+.env*
+
+# Test coverage
+coverage/
