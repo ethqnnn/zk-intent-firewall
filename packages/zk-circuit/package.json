@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Noir circuit for zero-knowledge proof of intent: proves that an agent action obeys a committed, hidden policy",
+  "license": "Apache-2.0",
   "scripts": {
     "test": "nargo test --workspace --deny-warnings",
     "build": "nargo compile --package proof_of_intent --deny-warnings",
