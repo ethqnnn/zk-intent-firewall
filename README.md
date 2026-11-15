@@ -1,13 +1,11 @@
 # zk-intent-firewall
 
+![The agent pays a lookalike wallet after a prompt injection; the firewall blocks it, and the run ends with 2 paid and 2 blocked](docs/demo.gif)
+
 Human-approved, third-party-verifiable AI agent payments with a hidden policy, using Noir
 zero-knowledge proofs.
 
-<!-- Demo video: replace the line below with the link, e.g. [▶ Watch the demo (2 min)](https://…) -->
-**▶ Demo video:** _coming soon_
-
-<!-- Demo GIF: replace the line below with the image, e.g. ![The firewall blocking a prompt injection](docs/media/demo.gif) -->
-_GIF coming soon_
+**[▶ Watch the demo](https://youtu.be/0l9pcMcDJLk)**
 
 > [!WARNING]
 > **Alpha. Not externally audited. Do not use with real funds.**
