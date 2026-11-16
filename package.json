@@ -27,6 +27,10 @@
     "dashboard:test": "pnpm --filter @zk-intent-firewall/demo-dashboard run test",
     "dashboard:test:e2e": "pnpm --filter @zk-intent-firewall/demo-dashboard run test:e2e",
     "dashboard:mutation": "pnpm --filter @zk-intent-firewall/demo-dashboard run mutation",
-    "dashboard:typecheck": "pnpm --filter @zk-intent-firewall/demo-dashboard run typecheck"
+    "dashboard:typecheck": "pnpm --filter @zk-intent-firewall/demo-dashboard run typecheck",
+    "break-it:start": "pnpm --filter @zk-intent-firewall/break-it run start",
+    "break-it:test": "pnpm --filter @zk-intent-firewall/break-it run test",
+    "break-it:typecheck": "pnpm --filter @zk-intent-firewall/break-it run typecheck",
+    "break-it:warm-crs": "pnpm --filter @zk-intent-firewall/break-it run warm-crs"
   }
 }
