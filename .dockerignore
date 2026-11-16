@@ -1,0 +1,10 @@
+# Build context for apps/break-it/Dockerfile (the repository root).
+.git
+**/node_modules
+**/dist
+**/target
+**/test-results
+**/playwright-report
+apps/demo-dashboard/recordings
+docs/demo.gif
+.env*

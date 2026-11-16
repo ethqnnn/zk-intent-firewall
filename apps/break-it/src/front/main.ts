@@ -6,7 +6,7 @@
  *
  * Configuration is by environment variable (front/config.ts, and the README).
  */
-import { mkdirSync } from 'node:fs';
+import { accessSync, constants, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,8 +41,14 @@ say(`engine sandbox holds: ${JSON.stringify(sandbox)}`);
 
 let logFile: string | undefined;
 if (config.dataDir) {
-  mkdirSync(config.dataDir, { recursive: true });
-  logFile = join(config.dataDir, 'attempts.jsonl');
+  try {
+    mkdirSync(config.dataDir, { recursive: true });
+    accessSync(config.dataDir, constants.W_OK);
+    logFile = join(config.dataDir, 'attempts.jsonl');
+  } catch (e) {
+    // Serve anyway: an unwritable volume should not take the instance down. Say so loudly.
+    console.error(`[break-it] WARNING: ${config.dataDir} is not writable (${(e as Error).message}); the attempt log is memory only. On Railway, set RAILWAY_RUN_UID=0.`);
+  }
 }
 const log = await AttemptLog.open(logFile ? { file: logFile } : {});
 say(logFile ? `attempt log: ${logFile} (${log.stats().total} earlier attempts loaded)` : 'attempt log: memory only (set BREAKIT_DATA_DIR or attach a volume to keep it)');
