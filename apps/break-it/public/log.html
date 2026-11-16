@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break-it Public Log</title>
+<meta name="description" content="Every attempt against the zk-intent-firewall break-it instance: what was tried, the result, and the check that caught it.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<script type="module" src="/log.js"></script>
+</head>
+<body>
+<div class="fake-banner" role="note"><strong>FAKE MONEY — this is a test environment. No real funds, no real payment rail, no blockchain.</strong></div>
+<div class="wrap">
+  <nav class="top" aria-label="Site">
+    <a class="brand" href="/">zk-intent-firewall · break it</a>
+    <a href="/#console">Attack console</a>
+    <a href="/#report">Report a break</a>
+    <a href="#breaks">Breaks</a>
+    <a href="#leaderboard">Leaderboard</a>
+    <a href="#attempts">Attempts</a>
+  </nav>
+
+  <h1>Public log</h1>
+  <p class="lede">
+    Every attempt against this instance: what was tried, what happened, and the named check that
+    caught it, or confirmation that nothing did. Check here before reporting, to see whether an
+    idea has already been tried. Proofs are logged as their size and a hash prefix, never in full;
+    visitors appear as a chosen handle or a per-instance pseudonym, never an address.
+  </p>
+
+  <div class="tiles">
+    <div class="tile"><div class="label">Attempts</div><div class="value" id="s-total">…</div><div class="sub" id="s-span"></div></div>
+    <div class="tile good"><div class="label">Caught</div><div class="value" id="s-caught">…</div></div>
+    <div class="tile"><div class="label">Legitimate (in policy)</div><div class="value" id="s-legit">…</div></div>
+    <div class="tile good" id="s-break-tile"><div class="label">Breaks</div><div class="value" id="s-break">…</div></div>
+  </div>
+
+  <h2 id="breaks">Breaks</h2>
+  <div id="breaks-body" class="card"></div>
+
+  <div class="cols">
+    <div>
+      <h2>Checks that fired</h2>
+      <div class="card table-scroll"><table id="checks" aria-label="Checks"><thead><tr><th>Layer</th><th>Check</th><th class="num">Count</th><th class="bar-col"></th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div>
+      <h2 id="leaderboard">Leaderboard</h2>
+      <p class="hint">Ranked by breaks, then by how many distinct checks someone triggered (breadth of defences probed), then attempts. Handles are self-chosen and unverified.</p>
+      <div class="card table-scroll"><table id="board" aria-label="Leaderboard"><thead><tr><th>#</th><th>Who</th><th class="num">Breaks</th><th class="num">Checks hit</th><th class="num">Attempts</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <h2 id="attempts">Attempts</h2>
+  <div class="card console">
+    <div class="row">
+      <div><label for="f-verdict">Verdict</label><select id="f-verdict"><option value="">any</option><option value="caught">caught</option><option value="legitimate">legitimate</option><option value="break">break</option></select></div>
+      <div><label for="f-route">Route</label><select id="f-route"><option value="">any</option><option value="agent">agent → firewall</option><option value="direct">direct → tool server</option><option value="passkey">passkey approval</option><option value="enroll">passkey enrolment</option></select></div>
+      <div><label for="f-check">Check</label><select id="f-check"><option value="">any</option></select></div>
+      <div><label for="f-who">Who</label><input id="f-who" maxlength="24" placeholder="handle or anon-…"></div>
+    </div>
+  </div>
+  <div id="highlight"></div>
+  <div class="card table-scroll">
+    <table id="attempts-table" aria-label="Attempts">
+      <thead><tr><th>When</th><th>Who</th><th>Route</th><th>Attempted</th><th>Result</th><th>Caught by</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p class="more"><button type="button" class="secondary" id="more">Load older</button></p>
+  </div>
+
+  <footer>
+    The in-memory window holds the most recent attempts; the counts cover every attempt since the log began.
+    API: <code>GET /api/log?limit=&amp;before=&amp;verdict=&amp;route=&amp;layer=&amp;check=&amp;who=</code>,
+    <code>GET /api/log?id=</code>, <code>GET /api/leaderboard</code>.
+  </footer>
+</div>
+</body>
+</html>

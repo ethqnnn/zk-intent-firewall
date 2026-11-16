@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break the Firewall</title>
+<meta name="description" content="A public test instance of zk-intent-firewall with fake money. Try to get an unauthorised payment past the real circuit, firewall, passkey registry and verifier.">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<script type="module" src="/app.js"></script>
+</head>
+<body>
+<div class="fake-banner" role="note"><strong>FAKE MONEY — this is a test environment. No real funds, no real payment rail, no blockchain.</strong></div>
+<div class="wrap">
+  <nav class="top" aria-label="Site">
+    <a class="brand" href="/">zk-intent-firewall · break it</a>
+    <a href="#policy">Policy</a>
+    <a href="#rules">What counts</a>
+    <a href="#console">Attack console</a>
+    <a href="#report">Report a break</a>
+    <a href="/log">Public log</a>
+    <a href="https://github.com/ethqnnn/zk-intent-firewall" rel="noopener">GitHub</a>
+  </nav>
+
+  <h1>Break the firewall. The money is fake; the defences are not.</h1>
+  <p class="lede">
+    This is a live instance of <a href="https://github.com/ethqnnn/zk-intent-firewall" rel="noopener">zk-intent-firewall</a>:
+    the real Noir circuit, the real firewall that proves each payment, the real passkey-gated registry
+    and the real verifier. Only the treasury is fake: a number in memory, starting at 10,000 fake USDC.
+    Your job is to get it to pay somebody the policy below does not allow.
+  </p>
+
+  <div class="tiles" id="tiles" aria-live="polite">
+    <div class="tile"><div class="label">Fake treasury</div><div class="value" id="t-balance">…</div><div class="sub" id="t-balance-sub"></div></div>
+    <div class="tile good" id="t-breaks-tile"><div class="label">Breaks found</div><div class="value" id="t-breaks">…</div><div class="sub" id="t-breaks-sub"></div></div>
+    <div class="tile"><div class="label">Attempts logged</div><div class="value" id="t-attempts">…</div><div class="sub"><a href="/log">See every one</a></div></div>
+    <div class="tile"><div class="label">Engine sandbox</div><div class="value" id="t-sandbox">…</div><div class="sub" id="t-sandbox-sub"></div></div>
+  </div>
+
+  <h2>How it fits together</h2>
+  <pre aria-label="Architecture">  you (as the agent) ──▶ firewall: IntentFirewall + LocalWasmProver ──▶ tool server: IntentVerifier ──▶ fake ledger
+                          holds the policy opening, proves or blocks       registry of passkey-approved
+                                                                           commitments, verifies, then pays
+  you (around it)    ───────────────────────────────────────────────▶  tool server, with any _meta you like
+  you (as the owner) ──▶ passkey registry: register / revoke a policy, enrol a passkey (WebAuthn)</pre>
+  <p>
+    Everything on the security path is the code in the repository, imported unchanged:
+    <code>packages/mcp-firewall</code> (firewall, prover, verifier), the compiled
+    <code>proof_of_intent</code> circuit, and the dashboard's <code>PasskeyPolicyRegistry</code>.
+    The engine that runs them is sandboxed by Node's permission model: no network at all, no child
+    processes, no file writes. The page asks it to try each of those at boot and shows the result above.
+  </p>
+
+  <h2 id="policy">The policy in force</h2>
+  <p>
+    Published in full, except the salt, which stays secret as it would in production: it is what
+    keeps the published commitment from revealing the policy. You do not need it to attack the
+    rules; knowing the rules is the point.
+  </p>
+  <div class="cols">
+    <div class="card">
+      <div class="table-scroll"><table id="policy-table" aria-label="Policy"><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3 class="flush">Allowlisted payees</h3>
+      <div class="table-scroll"><table id="payees" aria-label="Allowlist"><tbody></tbody></table></div>
+      <h3>Not allowlisted (try them)</h3>
+      <div class="table-scroll"><table id="not-payees" aria-label="Not allowlisted"><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3 class="flush">Tools on the fake treasury's MCP server</h3>
+    <div class="table-scroll"><table id="tools" aria-label="Tools"><thead><tr><th>Tool</th><th>Needs a proof</th><th>Scope</th><th>Granted</th><th>What it does</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card">
+    <h3 class="flush">Verifier</h3>
+    <div class="table-scroll"><table id="verifier" aria-label="Verifier"><tbody></tbody></table></div>
+  </div>
+
+  <h2 id="rules">What counts as a break</h2>
+  <div class="cols">
+    <div class="card">
+      <h3 class="flush">A genuine break</h3>
+      <p>An unauthorised action that the system accepts as valid. Any one of:</p>
+      <ul class="plain">
+        <li>The verifier accepts a payment the published policy does not allow: a recipient not on the allowlist (a lookalike, another chain), an amount of zero or over the limit, a tool whose scope is not granted, a time at or after expiry, or a proof under any commitment other than the one published.</li>
+        <li>The firewall issues a proof for such an action.</li>
+        <li>One proof is accepted twice, or for an action other than the one it was made for.</li>
+        <li>The registry accepts a register or revoke approval, or a second passkey enrolment. The owner's key was used twice at boot and then discarded, so no legitimate approval can happen after that.</li>
+        <li>The salt or the policy opening leaks from the service, or the engine reaches the network, a file outside its sandbox, or a process.</li>
+      </ul>
+      <p>The first four are detected automatically by an independent check of every accepted action against the published policy. Those attempts are flagged <span class="pill break">BREAK</span> in the log, and the counter above turns red.</p>
+    </div>
+    <div class="card">
+      <h3 class="flush">Not a break (known and documented)</h3>
+      <ul class="plain">
+        <li><strong>In-policy payments.</strong> Paying an allowlisted payee up to the limit is allowed by design, even if the agent was tricked into it.</li>
+        <li><strong>Draining by repetition.</strong> There is no cumulative budget yet (spec L1); many in-policy payments add up. The treasury tops itself back up.</li>
+        <li><strong>Seeing why you were blocked.</strong> In production the agent sees only an opaque refusal; here the operator's reason is shown, because the policy is public anyway.</li>
+        <li><strong>Rate limits and lockouts.</strong> Hitting them is the defence working. Exhausting capacity is denial of service, not a break, and please don't.</li>
+        <li><strong>Handles.</strong> Names on the leaderboard are self-chosen and unverified.</li>
+      </ul>
+      <p class="hint">The full threat model and its limits are in the <a href="https://github.com/ethqnnn/zk-intent-firewall#threat-model" rel="noopener">README</a> and <a href="https://github.com/ethqnnn/zk-intent-firewall/blob/main/docs/circuit-spec.md" rel="noopener">circuit spec</a> (sections 8 and 9).</p>
+    </div>
+  </div>
+
+  <h2 id="console">Attack console</h2>
+  <p>
+    Three ways in. Pick a starting point, edit the JSON, send it. Every attempt is logged publicly,
+    with the check that stopped it. Proofs the firewall hands back are kept here so you can replay,
+    move or tamper with them on the direct route.
+  </p>
+  <div class="card console">
+    <div class="tabs" role="tablist" aria-label="Route">
+      <button type="button" role="tab" aria-selected="true" data-route="agent">As the agent → firewall</button>
+      <button type="button" role="tab" aria-selected="false" data-route="direct">Around it → tool server</button>
+      <button type="button" role="tab" aria-selected="false" data-route="passkey">As the owner → passkey registry</button>
+    </div>
+    <p class="hint" id="route-hint"></p>
+    <div class="row">
+      <div><label for="preset">Starting point</label><select id="preset"></select></div>
+      <div><label for="handle">Handle (optional, shown in the log)</label><input id="handle" maxlength="24" autocomplete="nickname" placeholder="2 to 24 of A–Z a–z 0–9 _ . -"></div>
+    </div>
+    <label for="note">What you are trying (optional, shown in the log)</label>
+    <input id="note" maxlength="280" placeholder="for example: lookalike address with mixed-case hex">
+    <label for="body">Request body</label>
+    <textarea id="body" spellcheck="false"></textarea>
+    <div class="row spaced">
+      <div class="fixed"><button type="button" id="send">Send attempt</button></div>
+      <div class="hint" id="endpoint"></div>
+    </div>
+    <div id="result" aria-live="polite"></div>
+  </div>
+
+  <h3>From a terminal</h3>
+  <p>The API takes JSON and needs no key. Scripts and other agents are welcome; keep within the rate limits.</p>
+  <pre id="curl"></pre>
+
+  <div class="card report" id="report">
+    <h2>Found a genuine break? Report it privately.</h2>
+    <p>
+      Use GitHub's private vulnerability reporting:
+      <a id="report-link" href="https://github.com/ethqnnn/zk-intent-firewall/security/advisories/new" rel="noopener"><strong>open a private security advisory</strong></a>.
+      Please include the attempt's link from the <a href="/log">public log</a> (each attempt has one),
+      the request you sent, and what you expected. Don't post a working exploit publicly before it is fixed.
+      See <a href="https://github.com/ethqnnn/zk-intent-firewall/blob/main/SECURITY.md" rel="noopener">SECURITY.md</a>.
+    </p>
+    <p>
+      Tried something and it was correctly blocked? You don't need to report it: it is already in the
+      <a href="/log">public log</a>, with the check that caught it. That record is useful too. It shows
+      what has been tried, so others don't repeat it.
+    </p>
+  </div>
+
+  <h2>Read the code you are attacking</h2>
+  <ul class="plain">
+    <li><a href="https://github.com/ethqnnn/zk-intent-firewall/blob/main/docs/circuit-spec.md" rel="noopener">Circuit spec</a>: the statement, inputs, hashes and threat model.</li>
+    <li><a href="https://github.com/ethqnnn/zk-intent-firewall/blob/main/packages/zk-circuit/crates/proof_of_intent/src/main.nr" rel="noopener">The circuit</a> (<code>proof_of_intent/src/main.nr</code>).</li>
+    <li><a href="https://github.com/ethqnnn/zk-intent-firewall/tree/main/packages/mcp-firewall" rel="noopener">The firewall and verifier SDK</a> (<code>packages/mcp-firewall</code>).</li>
+    <li><a href="https://github.com/ethqnnn/zk-intent-firewall/blob/main/apps/demo-dashboard/src/server/verifier/passkey-registry.ts" rel="noopener">The passkey registry</a>.</li>
+    <li><a href="https://github.com/ethqnnn/zk-intent-firewall/tree/main/apps/break-it" rel="noopener">This service</a> (<code>apps/break-it</code>): the fake ledger, the break detector, the sandbox.</li>
+  </ul>
+
+  <footer>
+    Alpha, not externally audited. Apache-2.0. This instance holds no real funds and no personal data:
+    the log keeps a per-instance pseudonym, never an IP address. State resets when the service restarts;
+    the log does not.
+  </footer>
+</div>
+</body>
+</html>

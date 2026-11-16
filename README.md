@@ -137,6 +137,7 @@ encrypted custody of the policy, and passkey recovery.
 | 1 | Noir circuit, spec, fixtures | Done. Not audited. |
 | 2 | TypeScript MCP middleware and verifier SDK | Done. Not audited. See [`packages/mcp-firewall`](packages/mcp-firewall) |
 | 3 | Demo dashboard: passkey-approved policies, revocation, live prompt-injection demo | Done. Not audited. See [`apps/demo-dashboard`](apps/demo-dashboard) |
+| 4 | Public break-it environment: the real stack against a fake-money ledger, public attempt log | Built, not yet deployed. See [`apps/break-it`](apps/break-it) |
 
 ### Known limits
 
@@ -162,6 +163,7 @@ packages/zk-circuit/            Noir workspace
   scripts/                      fixtures, dependency pin, security-path, prove/verify, mutation
 packages/mcp-firewall/          MCP firewall proxy (prover side) and verifier SDK (tool-server side)
 apps/demo-dashboard/            dashboard, passkey registry, sandboxed demo agent
+apps/break-it/                  public break-it service: fake ledger, break detector, sandboxed engine
 ```
 
 ## Prerequisites
@@ -182,7 +184,7 @@ From the repository root:
 
 | Command | What it does |
 |---|---|
-| `pnpm test` | `nargo test` on the circuit workspace (152 tests), and the firewall's and the dashboard's vitest suites |
+| `pnpm test` | `nargo test` on the circuit workspace (152 tests), and the firewall's, the dashboard's and break-it's vitest suites |
 | `pnpm build` | Compile the circuit, build the firewall and the dashboard |
 | `pnpm circuit:verify` | Format check, security-path check, tests, dependency pin, fixture check, execute |
 | `pnpm firewall:test` | The firewall's vitest suites |
@@ -192,6 +194,8 @@ From the repository root:
 | `pnpm dashboard:test` | The dashboard's vitest suites (real processes, real proofs) |
 | `pnpm dashboard:test:e2e` | Playwright through the dashboard with a virtual authenticator |
 | `pnpm dashboard:mutation` | Mutation check of the dashboard's security checks |
+| `pnpm break-it:start` | The public break-it service on <http://localhost:8080> (run `pnpm break-it:warm-crs` once first); deployment: [`apps/break-it`](apps/break-it#deploy-on-railway) |
+| `pnpm break-it:test` | Break-it's vitest suites (real proofs, real processes) |
 
 [CONTRIBUTING.md](CONTRIBUTING.md) has the full list, including the circuit's mutation check.
 
